@@ -24,9 +24,9 @@ const db = knex({
   client: 'pg',
   connection: {
     host : '127.0.0.1',
-    users : 'cng',
-    password : '1212',
-    database : 'smartbraindb'
+    users : 'postgres',
+    password : '',
+    database : 'smartbrain'
   }
 });
 
@@ -34,109 +34,109 @@ const app = express();
 app.use(bodyParser.json()); // need to use bodyParser to parse JSON objects
 app.use(cors());
 
+/*const database = {
+  users: [
+    {
+      id: '123',
+      name: 'Clement',
+      email: 'clement@boss.com',
+      password: 'cookies',
+      entries: 0,
+      joined: new Date()
+    },
+    {
+      id: '124',
+      name: 'Sally',
+      email: 'sally@boss.com',
+      password: 'milk',
+      entries: 0,
+      joined: new Date()
+    }
+  ],
+  login: [
+    {
+      id: '987',
+      hash: '',
+      email: 'clement@boss.com'
+    }
+  ]
+}*/
+
 app.get('/', (req, res) => {
   /*
   flawed as we need database, this will just get whatever database at the start
   on line 7 instead of updated version which is where database will come in handy
   */
-  res.send(db.select('*').from('users'));
+  res.send(database.users);
 })
 
 app.post('/signin', (req, res) => {
-  db.select('email', 'hash').from('login')
-  .where('email', '=', req.body.email)
-  .then(data => {
-    const loginData = data[0];
-    const isValidPassword = bcrypt.compareSync(req.body.password, loginData.hash);
-    if (isValidPassword) {
-      return db.select('*').from('users')
-      .where('email', '=', req.body.email)
-      .then(user => {
-        res.json(user[0])
-      })
-      .catch(err => res.status(400).json('Could not sign in'))
-    } else {
-      res.status(400).json('Invalid email or password')
-    }
-  })
-  .catch(err => res.status(400).json('Invalid user credentials'))
+  // Load hash from your password DB.
+  bcrypt.compare("boss", '$2a$10$ZLCwHW9SBkIyAdsWaeH76Or1zfDNsD.5lV65aB.fImbRJ2Y8xbfwu', function(err, res) {
+      // res == true
+      console.log('first guess', res);
+  });
+  bcrypt.compare("veggies", '$2a$10$ZLCwHW9SBkIyAdsWaeH76Or1zfDNsD.5lV65aB.fImbRJ2Y8xbfwu', function(err, res) {
+      // res = false
+      console.log('second guess', res);
+  });
+
+  if (req.body.email === database.users[0].email && req.body.password === database.users[0].password) {
+    res.json(database.users[0]);
+  } else {
+    res.status(400).json('Wrong email or password')
+  }
+  // res.json('signed in');
 })
 
 app.post('/signup', (req, res) => {
   const { name, email, password} = req.body;
-  const hash = bcrypt.hashSync(password);
-  /* use transaction when you need to insert things into 2+ tables in the db
-    use trx to use operations throughout transaction
-  */
-  db.transaction(trx => {
-    trx.insert({ // insert values for column
-      hash: hash,
-      email: email
-    })
-    .into('login') // insert into the login table
-    .returning('email') //specify we want to return the email column from trx.insert
-    .then(loginEmail => { //use email to insert into users table
-      return trx('users') // use another trx transaction to return since we are inside callback function
-      .returning('*') // return everything that we insert into users table
-      .insert({
-        email: loginEmail[0],
-        name: name,
-        joined: new Date()
-      })
-      .then(user => {
-        res.json(user[0]); // respond with json
-      })
-      .catch(err => res.status(400).json('cannot register'))
-    })
-    .then(trx.commit) // use trx.commit to add transactions into the table
-    .catch(trx.rollback) // rollback transaction incase of an error
-  })
-  .catch(err => res.status(400).json('Could not register'))
-})
-
-/*
-app.post('/signup', (req, res) => {
-  const { name, email, password} = req.body;
-  const hash = bcrypt.hashSync(password);
-  return db('users')
-  .returning('*')
-  .insert({
-    email: email,
+  bcrypt.hash(password, null, null, function(err, hash) {
+      // Store hash in your password DB.
+      console.log(hash);
+  });
+  database.users.push({
+    id: '125',
     name: name,
+    email: email,
+    entries: 0,
     joined: new Date()
   })
-  .then(user => {
-    console.log('usar',user);
-    console.log(user[0]);
-    res.json(user[0])
-  })
-  .catch(err => res.status(400).json('cannot register'))
+  console.log(database.users[2])
+  res.json(database.users[database.users.length - 1])
 })
-*/
 
 app.get('/profile/:id', (req, res) => {
   const { id } = req.params;
-  db.select('*').from('users').where('id', id)
-  .then(user => {
-    if (user.length) {
-      res.json(user[0]);
-    } else {
-      res.status(400).json('User id not found');
-    }
-
+  let found = false;
+  database.users.forEach(user => {
+    if(user.id === id) {
+      found = true;
+      return res.json(user);
+    } /*else {
+      res.status(404).json('User does not exist');
+    }*/
   })
-  .catch(err => res.status(400).json('error getting user profile'))
+  if (!found) {
+    res.status(400).json('User does not exist');
+  }
 })
 
 app.put('/image', (req, res) => {
   const { id } = req.body;
-  db('users').where('id',"=",id)
-  .returning('entries')
-  .increment('entries',1)
-  .then( entries => {
-    res.json(entries[0]);
+  let found = false;
+  database.users.forEach(user => {
+    if(user.id === id) {
+      found = true;
+      user.entries++;
+      return res.json(user.entries);
+    } /*else {
+      res.status(404).json('User does not exist');
+    }*/
   })
-  .catch(err => res.status(400).json('cannot find entries'))
+  if (!found) {
+    res.status(400).json('User does not exist');
+  }
 })
 
 
