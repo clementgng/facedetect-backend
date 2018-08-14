@@ -12,12 +12,20 @@ const getID = require('./controllers/grabprofile')
 const db = knex({
   client: 'pg',
   connection: {
+    host : process.env.DATABASE_URL,
+    ssl: true,
+  }
+});
+
+/*const db = knex({
+  client: 'pg',
+  connection: {
     host : 'postgresql-animated-17189',
     users : 'cng',
     password : '1212',
     database : 'smartbraindb'
   }
-});
+});*/
 
 const app = express();
 app.use(bodyParser.json()); // need to use bodyParser to parse JSON objects
