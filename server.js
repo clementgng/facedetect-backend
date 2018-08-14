@@ -28,7 +28,7 @@ Simplify code by making things more modular
 Put large portions of code into functions and call those functions
 */
 
-app.get('/', (req, res) => { res.send(db.select('*').from('users')) })
+app.get('/', (req, res) => { res.send('it is working@!') }) //db.select('*').from('users')) })
 
 app.post('/signin', (req, res) => { signin.handleSignIn(req, res, db, bcrypt) })
 
