@@ -5,13 +5,14 @@ const app = new Clarifai.App({
 });
 
 const getApiCall = (req, res) => {
-  console.log('this the url');
-  app.models
-    .predict(Clarifai.FACE_DETECT_MODEL, req.body.inputurl)
-    .then(data => {
-      res.json(data);
-    })
-    .catch(err => res.status(400).json('Cannot fetch API'))
+  if (req.body.inputurl.length > 0) {
+    app.models
+      .predict(Clarifai.FACE_DETECT_MODEL, req.body.inputurl)
+      .then(data => {
+        res.json(data);
+      })
+      .catch(err => res.status(400).json('Cannot fetch API'))
+  }
 }
 
 const entriesHandler = (req, res, db) => {
