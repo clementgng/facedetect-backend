@@ -5,7 +5,7 @@ const app = new Clarifai.App({
 });
 
 const getApiCall = (req, res) => {
-  console.log('this the url',req.body.inputurl);
+  console.log('this the url');
   app.models
     .predict(Clarifai.FACE_DETECT_MODEL, req.body.inputurl)
     .then(data => {
