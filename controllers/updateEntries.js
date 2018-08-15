@@ -16,8 +16,8 @@ const getApiCall = (req, res) => {
 const entriesHandler = (req, res, db) => {
   const { id } = req.body;
   db('users').where('id',"=",id)
-  .increment('entries',1)
   .returning('entries')
+  .increment('entries',1)
   .then( entries => {
     res.json(entries[0]);
   })
